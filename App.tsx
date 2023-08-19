@@ -6,8 +6,10 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Animated,
 } from "react-native";
 import { data } from "./data";
+import { useRef } from "react";
 
 const { width, height } = Dimensions.get("screen");
 
@@ -15,35 +17,56 @@ const imageW = width * 0.7;
 const imageH = imageW * 1.54;
 
 export default function App() {
+  const scrollX = useRef(new Animated.Value(0)).current;
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
       <View style={StyleSheet.absoluteFillObject}>
         {data.map((image, index) => {
+          const inputRange = [
+            (index - 1) * width,
+            index * width,
+            (index + 1) * width,
+          ];
+
+          const opacity = scrollX.interpolate({
+            inputRange,
+            outputRange: [0, 1, 0],
+          });
+
           return (
-            <Image
+            <Animated.Image
               key={`image-${index}`}
               source={{ uri: image }}
-              style={[StyleSheet.absoluteFillObject]}
-              blurRadius={10}
+              style={[StyleSheet.absoluteFillObject, { opacity }]}
+              blurRadius={50}
             />
           );
         })}
       </View>
-      <FlatList
+      <Animated.FlatList
         horizontal
         scrollEventThrottle={16}
         pagingEnabled
         data={data}
         keyExtractor={(_, index) => index.toString()}
-        renderItem={({ item }) => {
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: true }
+        )}
+        renderItem={({ item: image }) => {
           return (
             <View
               style={{ width, alignItems: "center", justifyContent: "center" }}
             >
               <Image
-                source={{ uri: item }}
-                style={{ width: imageW, height: imageH }}
+                source={{ uri: image }}
+                style={{
+                  width: imageW,
+                  height: imageH,
+                  borderRadius: 16,
+                  resizeMode: "cover",
+                }}
               />
             </View>
           );
